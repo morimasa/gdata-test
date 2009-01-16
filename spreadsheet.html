@@ -1,0 +1,23 @@
+<html>
+<head>
+<title>spreadsheet list</title>
+</head>
+<body>
+
+{{ user }}
+&nbsp;
+<a href='{{ url }}'>{{ url_linktext }}</a>
+&nbsp;
+
+<hr>
+
+<h3>spreadsheet list</h3>
+
+<ol>
+{% for item in list %}
+	<li><a href="{{ item }}"> {{ item }} </a>
+{% endfor %}
+</ol>
+
+</body>
+</html>

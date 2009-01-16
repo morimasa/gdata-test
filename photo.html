@@ -1,0 +1,23 @@
+<html>
+<head>
+<title>photo list</title>
+</head>
+<body>
+
+{{ user }}
+&nbsp;
+<a href='{{ url }}'>{{ url_linktext }}</a>
+&nbsp;
+
+<hr>
+
+<h1>photo list</h1>
+
+<ol>
+{% for item in photolist %}
+	<li><img src={{ item }} />
+{% endfor %}
+</ol>
+
+</body>
+</html>

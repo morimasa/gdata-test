@@ -1,0 +1,21 @@
+<html>
+<head>
+<title>index page</title>
+</head>
+<body>
+
+{%if user%}
+  hello {{user.nickname}}
+    <a href="{{logout}}">logout</a>
+
+    <hr>
+    <h1>photo</h1>
+    <a href='/photo'>photo</a>
+    <h1>spreadsheet</h1>
+    <a href='/spreadsheet'>spreadsheet</a>
+{%else%}
+    <a href="{{login}}">login</a>
+{%endif%}
+
+</body>
+</html>
