@@ -43,9 +43,6 @@ class MainPage(webapp.RequestHandler):
 		self.response.headers['Content-Type'] = 'text/html'
 
 		user = users.get_current_user()
-		if user==None:
-			self.redirect(users.create_login_url(self.request.uri))
-			return 
 		template_values = {
 			'user':user,
 			'login':users.create_login_url(self.request.uri),
@@ -65,6 +62,7 @@ class PhotoPage(webapp.RequestHandler):
 
 		client = gdata.photos.service.PhotosService()
 		gdata.alt.appengine.run_on_appengine(client)
+		gdata.service.http_request_handler = gdata.urlfetch
 		photolist=getPhotolist(client,user)
 
 		url=None
@@ -86,6 +84,13 @@ class PhotoPage(webapp.RequestHandler):
 		self.response.out.write(template.render(path, template_values))
 
 class SSPage(webapp.RequestHandler):
+	GD_CLIENT = None
+
+	def __init__(self):
+		if self.GD_CLIENT==None:
+			self.GD_CLIENT = gdata.spreadsheet.service.SpreadsheetsService()
+			gdata.alt.appengine.run_on_appengine(self.GD_CLIENT)
+
 	def get(self):
 		user = users.get_current_user()
 		if user==None:
@@ -95,23 +100,35 @@ class SSPage(webapp.RequestHandler):
 		self.response.headers['Content-Type'] = 'text/html'
 
 		token = self.request.get('token')
-		if token==None:
-			authSubUrl = GetAuthSubUrl(self.request.uri);
-			self.redirect(authSubUrl)
+		if not token:
+			authSubUrl = GetAuthSubUrl(self.GD_CLIENT, self.request.uri);
+			logging.info( 'authSubUrl:%s' % ( authSubUrl ))
+			self.response.set_status(301)
+			self.response.headers['Location'] = str(authSubUrl)
+			self.response.clear()
+			#self.redirect(authSubUrl)
 			return
+		logging.info( 'token:%s' % ( token ))
 
-		gd_client = gdata.spreadsheet.service.SpreadsheetsService()
-		gdata.alt.appengine.run_on_appengine(gd_client)
-		list=getSSlist(gd_client, user)
+		#gd_client = gdata.service.GDataService() #gdata.spreadsheet.service.SpreadsheetsService()
+		#gdata.alt.appengine.run_on_appengine(gd_client)
+
+		self.GD_CLIENT.auth_token = token
+		self.GD_CLIENT.SetAuthSubToken(token)
+		authsubtoken = gdata.auth.AuthSubToken(token)
+		self.GD_CLIENT.UpgradeToSessionToken(authsubtoken)
+
+		list=getSSlist(self.GD_CLIENT, user)
 
 		path = os.path.join(os.path.dirname(__file__), 'spreadsheet.html')
 		self.response.out.write(template.render(path, {'list':list}))
 
-def GetAuthSubUrl(next):
-	scope = 'http://spreadsheets.google.com/feeds/'
+def GetAuthSubUrl(gd_client, next):
+	scope = 'http://docs.google.com/feeds/'
 	secure = False
 	session = True
-	gd_client = gdata.spreadsheet.service.SpreadsheetsService()
+	#gd_client = gdata.service.GDataService()
+	#gd_client = gdata.spreadsheet.service.SpreadsheetsService()
 	return gd_client.GenerateAuthSubURL(next, scope, secure, session);
 
 def main():
